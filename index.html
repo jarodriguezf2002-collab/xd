@@ -828,12 +828,6 @@
             const wb = XLSX.utils.table_to_book(tabla, {sheet: "Reporte Filtrado"});
             XLSX.writeFile(wb, filename);
         }
-    });
-
-    const wb = XLSX.utils.table_to_book(tablaClon, {sheet: "Reporte Filtrado"});
-    XLSX.writeFile(wb, filename);
-}
-        }
 
         function exportarPDF(tableId, title, filename) {
             const { jsPDF } = window.jspdf;
