@@ -824,9 +824,32 @@
         }
 
         function exportarExcel(tableId, filename) {
-            const tabla = document.getElementById(tableId);
-            const wb = XLSX.utils.table_to_book(tabla, {sheet: "Reporte Filtrado"});
-            XLSX.writeFile(wb, filename);
+    const tabla = document.getElementById(tableId);
+    
+    // Clonamos la tabla para no alterar la visualización en pantalla
+    const tablaClon = tabla.cloneNode(true);
+    const filas = tablaClon.querySelectorAll("tr");
+
+    // Recorremos las filas para transformar el formato decimal a porcentaje en la columna de Humedad (índice 3)
+    filas.forEach((fila, index) => {
+        if (index === 0) return; // Omitimos el encabezado
+        const celdas = fila.querySelectorAll("td");
+        if (celdas.length > 3) {
+            let valorHumTexto = celdas[3].innerText.replace(" %", "").trim();
+            let valorNum = parseFloat(valorHumTexto);
+            
+            if (!isNaN(valorNum)) {
+                // Si el valor está en decimal (ej. 0.752), lo pasamos a porcentaje real (75.2 %)
+                // Si ya está multiplicado, omite la multiplicación y solo concatena el %
+                let valorPorcentaje = valorNum <= 1 ? (valorNum * 100).toFixed(1) : valorNum.toFixed(1);
+                celdas[3].innerText = valorPorcentaje + " %";
+            }
+        }
+    });
+
+    const wb = XLSX.utils.table_to_book(tablaClon, {sheet: "Reporte Filtrado"});
+    XLSX.writeFile(wb, filename);
+}
         }
 
         function exportarPDF(tableId, title, filename) {
