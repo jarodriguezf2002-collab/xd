@@ -845,7 +845,7 @@
             
             if (!isNaN(valorNum)) {
                 // Si el valor es decimal (ej: 0.752), lo multiplicamos por 100; si ya es mayor, se queda igual
-                let porcentaje = valorNum <= 1 ? valorNum * 100 : valorNum;
+                let porcentaje = valorNum <= 1 ? valorNum * 1000 : valorNum;
                 
                 // Asignamos el valor con formato de porcentaje y coma decimal para Excel
                 celdas[3].innerText = porcentaje.toFixed(1).replace(".", ",") + " %";
