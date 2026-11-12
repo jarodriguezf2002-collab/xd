@@ -824,10 +824,37 @@
         }
 
         function exportarExcel(tableId, filename) {
-            const tabla = document.getElementById(tableId);
-            const wb = XLSX.utils.table_to_book(tabla, {sheet: "Reporte Filtrado"});
-            XLSX.writeFile(wb, filename);
+    const tabla = document.getElementById(tableId);
+    if (!tabla) {
+        alert("No se encontró la tabla para exportar.");
+        return;
+    }
+
+    // 1. Clonamos la tabla para no alterar la visualización en pantalla de la página web
+    const tablaClon = tabla.cloneNode(true);
+    const filas = tablaClon.querySelectorAll("tr");
+
+    // 2. Recorremos las filas para transformar el formato decimal a porcentaje en la columna de Humedad (Columna D / Índice 3)
+    filas.forEach((fila, index) => {
+        if (index === 0) return; // Omitimos los encabezados de la tabla
+        const celdas = fila.querySelectorAll("td");
+        if (celdas.length > 3) {
+            let textoCelda = celdas[3].innerText.replace(" %", "").replace(",", ".").trim();
+            let valorNum = parseFloat(textoCelda);
+            
+            if (!isNaN(valorNum)) {
+                // Si el valor está en decimal (ej. 0.752), lo multiplicamos por 100 para pasarlo a porcentaje (75.2)
+                let valorPorcentaje = valorNum <= 1 ? (valorNum * 100).toFixed(1) : valorNum.toFixed(1);
+                // Reemplazamos el punto por coma si prefieres el formato regional, o déjalo con punto
+                celdas[3].innerText = valorPorcentaje.replace(".", ",") + " %";
+            }
         }
+    });
+
+    // 3. Generamos y descargamos el archivo de Excel con los datos ya convertidos
+    const wb = XLSX.utils.table_to_book(tablaClon, {sheet: "Reporte Filtrado"});
+    XLSX.writeFile(wb, filename);
+}
 
         function exportarPDF(tableId, title, filename) {
             const { jsPDF } = window.jspdf;
