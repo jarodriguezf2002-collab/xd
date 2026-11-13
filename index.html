@@ -13,36 +13,38 @@
     <style>
         :root {
             --primary: #003DA5;
-            --secondary: #005b96;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --border-color: #eee;
-            --danger: #dc3545;
+            --secondary: #666666;
+            --bg-color: #EDEDED;
+            --card-bg: #FFFFFF;
+            --text-color: #666666;
+            --text-main: #333333;
+            --border-color: #EDEDED;
+            --danger: #C8102E;
             --success: #28a745;
             --warning: #ffc107;
-            --minmax-bg: linear-gradient(135deg, #e3f2fd, #bbdefb);
-            --chart-card-bg: #ffffff;
+            --minmax-bg: linear-gradient(135deg, #ffffff, #EDEDED);
+            --chart-card-bg: #FFFFFF;
         }
 
         [data-theme="dark"] {
-            --primary: #3b82f6;
-            --secondary: #60a5fa;
+            --primary: #003DA5;
+            --secondary: #888888;
             --bg-color: #121212;
             --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
+            --text-color: #EDEDED;
+            --text-main: #FFFFFF;
             --border-color: #333333;
-            --danger: #ef4444;
+            --danger: #C8102E;
             --success: #22c55e;
             --warning: #f59e0b;
-            --minmax-bg: linear-gradient(135deg, #1e3a8a, #1e293b);
+            --minmax-bg: linear-gradient(135deg, #1e293b, #1e1e1e);
             --chart-card-bg: #1e1e1e;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text-main);
             margin: 0;
             padding: 0;
             transition: background 0.3s, color 0.3s;
@@ -54,7 +56,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #003DA5, #005b96);
+            background: linear-gradient(135deg, #003DA5, #666666);
         }
 
         .login-card {
@@ -78,8 +80,8 @@
             padding: 10px 12px;
             margin: 8px 0;
             border: 1px solid var(--border-color);
-            background: var(--bg-color);
-            color: var(--text-color);
+            background: var(--card-bg);
+            color: var(--text-main);
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 14px;
@@ -88,7 +90,7 @@
         .login-card button {
             width: 100%;
             background: var(--primary);
-            color: white;
+            color: #FFFFFF;
             border: none;
             padding: 12px;
             border-radius: 8px;
@@ -96,7 +98,7 @@
             font-weight: bold;
             font-size: 15px;
             margin-top: 10px;
-            transition: background 0.3s;
+            transition: opacity 0.3s;
         }
 
         .login-card button:hover { opacity: 0.9; }
@@ -104,7 +106,7 @@
         .toggle-link {
             margin-top: 15px;
             font-size: 13px;
-            color: var(--secondary);
+            color: var(--primary);
             cursor: pointer;
             text-decoration: underline;
         }
@@ -119,7 +121,7 @@
 
         header {
             background-color: var(--primary);
-            color: white;
+            color: #FFFFFF;
             padding: 20px;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -136,7 +138,7 @@
 
         .top-btn {
             background: rgba(255,255,255,0.2);
-            color: white;
+            color: #FFFFFF;
             border: none;
             padding: 8px 12px;
             border-radius: 6px;
@@ -172,21 +174,22 @@
             font-weight: bold;
             font-size: 14px;
             flex-wrap: wrap;
+            color: var(--text-main);
         }
 
         .filter-group select, .filter-group input {
             padding: 8px 10px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
-            background: var(--bg-color);
-            color: var(--text-color);
+            background: var(--card-bg);
+            color: var(--text-main);
             font-size: 13px;
             outline: none;
         }
 
         .btn {
-            background: var(--secondary);
-            color: white;
+            background: var(--primary);
+            color: #FFFFFF;
             border: none;
             padding: 10px 20px;
             border-radius: 8px;
@@ -195,8 +198,8 @@
             transition: opacity 0.3s;
         }
         .btn:hover { opacity: 0.9; }
-        .btn-excel { background: var(--success); }
-        .btn-pdf { background: var(--danger); }
+        .btn-excel { background: var(--success); color: #FFFFFF; }
+        .btn-pdf { background: var(--danger); color: #FFFFFF; }
 
         .cards-grid {
             display: grid;
@@ -227,8 +230,8 @@
         }
 
         .metric { text-align: center; flex: 1; }
-        .metric .label { font-size: 12px; color: #777; text-transform: uppercase; }
-        .metric .value { font-size: 24px; font-weight: bold; color: var(--text-color); }
+        .metric .label { font-size: 12px; color: var(--secondary); text-transform: uppercase; }
+        .metric .value { font-size: 24px; font-weight: bold; color: var(--text-main); }
 
         .min-max-highlight {
             background: var(--minmax-bg);
@@ -250,12 +253,14 @@
             grid-template-columns: 1fr 1fr;
             gap: 8px;
             font-size: 13px;
+            color: var(--text-main);
         }
 
         .min-max-item {
             background: var(--card-bg);
             padding: 6px 10px;
             border-radius: 6px;
+            border: 1px solid var(--border-color);
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
@@ -271,7 +276,7 @@
             margin-top: 15px;
         }
         .status-normal { background: #d4edda; color: #155724; }
-        .status-alerta { background: #f8d7da; color: #721c24; }
+        .status-alerta { background: rgba(200, 16, 46, 0.15); color: var(--danger); }
 
         .section-box {
             background: var(--card-bg);
@@ -322,6 +327,7 @@
             text-align: left;
             border-bottom: 1px solid var(--border-color);
             font-size: 14px;
+            color: var(--text-main);
         }
 
         table th { background-color: var(--border-color); color: var(--primary); }
@@ -385,7 +391,7 @@
         <div class="container">
             
             <div class="controls-bar">
-                <div id="ultimaActualizacion">Última actualización: --</div>
+                <div id="ultimaActualizacion" style="color: var(--text-main);">Última actualización: --</div>
                 
                 <div class="filter-group">
                     <label for="tipoFiltro">Filtrar por:</label>
@@ -745,7 +751,7 @@
                     <td><b>${item.camara}</b></td>
                     <td>${item.temperatura} °C</td>
                     <td>${item.humedad} %</td>
-                    <td><span style="color: ${item.estado === 'Alerta' ? 'red' : 'green'}; font-weight: bold;">${item.estado}</span></td>
+                    <td><span style="color: ${item.estado === 'Alerta' ? '#C8102E' : '#28a745'}; font-weight: bold;">${item.estado}</span></td>
                 `;
                 tbodyEventos.appendChild(fila);
 
@@ -788,12 +794,12 @@
                         <td><b>${item.camara}</b></td>
                         <td>${item.temperatura} °C</td>
                         <td>${item.humedad} %</td>
-                        <td><span style="color: red; font-weight: bold;">${item.estado}</span></td>
+                        <td><span style="color: #C8102E; font-weight: bold;">${item.estado}</span></td>
                     `;
                     tbodyAlarmas.appendChild(fila);
                 });
             } else {
-                tbodyAlarmas.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#777;">No hay alarmas registradas en este período.</td></tr>`;
+                tbodyAlarmas.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--secondary);">No hay alarmas registradas en este período.</td></tr>`;
             }
         }
 
@@ -805,8 +811,8 @@
             const labelsAce = aceItems.map(i => i.fecha);
 
             charts.tempNat = crearOActualizarGrafica(charts.tempNat, 'graficoTempNatural', labelsNat, natItems.map(i => i.temperatura), 'Temp. Cámara Natural (°C)', '#003DA5', 'rgba(0,61,165,0.1)');
-            charts.tempAce = crearOActualizarGrafica(charts.tempAce, 'graficoTempAcelerada', labelsAce, aceItems.map(i => i.temperatura), 'Temp. Cámara Acelerada (°C)', '#dc3545', 'rgba(220,53,69,0.1)');
-            charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#005b96', 'rgba(0,91,150,0.1)');
+            charts.tempAce = crearOActualizarGrafica(charts.tempAce, 'graficoTempAcelerada', labelsAce, aceItems.map(i => i.temperatura), 'Temp. Cámara Acelerada (°C)', '#C8102E', 'rgba(200,16,46,0.1)');
+            charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#666666', 'rgba(102,102,102,0.1)');
             charts.humAce = crearOActualizarGrafica(charts.humAce, 'graficoHumAcelerada', labelsAce, aceItems.map(i => i.humedad), 'Hum. Cámara Acelerada (%)', '#28a745', 'rgba(40,167,69,0.1)');
         }
 
@@ -833,10 +839,10 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // 1. Encabezado de la empresa (Rojo y negrita)
+            // 1. Encabezado de la empresa (Rojo corporativo Leti #C8102E)
             doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
-            doc.setTextColor(204, 0, 0); // Rojo corporativo Leti
+            doc.setTextColor(200, 16, 46); 
             doc.text("Laboratorios Leti, S.A.V.", 14, 20);
             
             // 2. Bloque de Títulos del Informe Técnico
@@ -848,8 +854,8 @@
                 ],
                 body: [],
                 theme: 'grid',
-                headStyles: { lineWidth: 0.3, lineColor: [100, 100, 100] },
-                tableLineColor: [100, 100, 100],
+                headStyles: { lineWidth: 0.3, lineColor: [102, 102, 102] },
+                tableLineColor: [102, 102, 102],
                 tableLineWidth: 0.3
             });
 
@@ -860,19 +866,19 @@
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
-            doc.setTextColor(60, 60, 60);
+            doc.setTextColor(102, 102, 102);
             
             let finalY = doc.lastAutoTable.finalY + 8;
             doc.text("Usuario: " + usuarioActual, 14, finalY);
             doc.text("Fecha y Hora: " + fechaHoraActual, 120, finalY);
 
-            // 4. Tabla de Datos Principal (Estilo Azul Corporativo)
+            // 4. Tabla de Datos Principal (Azul Institucional Leti #003DA5)
             doc.autoTable({
                 html: '#' + tableId,
                 startY: finalY + 4,
                 theme: 'grid',
                 headStyles: { 
-                    fillColor: [0, 61, 165], // Azul institucional Leti
+                    fillColor: [0, 61, 165], 
                     textColor: [255, 255, 255],
                     fontStyle: 'bold',
                     halign: 'center'
@@ -882,19 +888,17 @@
                     halign: 'center'
                 },
                 alternateRowStyles: {
-                    fillColor: [240, 244, 248] // Cebra suave para mejor lectura
+                    fillColor: [237, 237, 237] // Fondo gris claro corporativo
                 },
                 styles: { fontSize: 9, cellPadding: 4 },
                 didParseCell: function(data) {
-                    // Si el estado es "Alerta", resaltarlo en rojo
                     if (data.column.index === 4 && data.cell.raw && String(data.cell.raw).includes("Alerta")) {
-                        data.cell.styles.textColor = [220, 53, 69];
+                        data.cell.styles.textColor = [200, 16, 46];
                         data.cell.styles.fontStyle = 'bold';
                     }
                 }
             });
 
-            // Descargar el archivo PDF formateado
             doc.save(filename);
         }
     </script>
