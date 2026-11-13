@@ -335,7 +335,7 @@
         .export-buttons {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
 
@@ -481,6 +481,13 @@
             <!-- Historial de Eventos -->
             <div class="section-box">
                 <h3>Historial de Todos los Eventos (Filtrado)</h3>
+                
+                <!-- Botones al principio del bloque -->
+                <div class="export-buttons">
+                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialEventos', 'Historial_Eventos_Filtrado.xlsx')">📊 Exportar Historial a Excel</button>
+                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialEventos', 'Historial de Eventos', 'Historial_Eventos_Filtrado.pdf')">📄 Exportar Historial a PDF</button>
+                </div>
+
                 <div style="overflow-x: auto;">
                     <table id="tablaHistorialEventos">
                         <thead>
@@ -495,15 +502,18 @@
                         <tbody id="cuerpoTablaHistorial"></tbody>
                     </table>
                 </div>
-                <div class="export-buttons">
-                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialEventos', 'Historial_Eventos_Filtrado.xlsx')">📊 Exportar Historial a Excel</button>
-                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialEventos', 'Historial de Eventos', 'Historial_Eventos_Filtrado.pdf')">📄 Exportar Historial a PDF</button>
-                </div>
             </div>
 
             <!-- Historial de Alarmas -->
             <div class="section-box">
                 <h3>Historial Exclusivo de Alarmas (Filtrado)</h3>
+                
+                <!-- Botones al principio del bloque -->
+                <div class="export-buttons">
+                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialAlarmas', 'Historial_Alarmas_Filtrado.xlsx')">📊 Exportar Alarmas a Excel</button>
+                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialAlarmas', 'Historial de Alarmas', 'Historial_Alarmas_Filtrado.pdf')">📄 Exportar Alarmas a PDF</button>
+                </div>
+
                 <div style="overflow-x: auto;">
                     <table id="tablaHistorialAlarmas">
                         <thead>
@@ -517,10 +527,6 @@
                         </thead>
                         <tbody id="cuerpoTablaAlarmas"></tbody>
                     </table>
-                </div>
-                <div class="export-buttons">
-                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialAlarmas', 'Historial_Alarmas_Filtrado.xlsx')">📊 Exportar Alarmas a Excel</button>
-                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialAlarmas', 'Historial de Alarmas', 'Historial_Alarmas_Filtrado.pdf')">📄 Exportar Alarmas a PDF</button>
                 </div>
             </div>
 
@@ -810,10 +816,11 @@
             const labelsNat = natItems.map(i => i.fecha);
             const labelsAce = aceItems.map(i => i.fecha);
 
+            // Cámara Natural en Azul (#003DA5) y Cámara Acelerada en Rojo (#C8102E)
             charts.tempNat = crearOActualizarGrafica(charts.tempNat, 'graficoTempNatural', labelsNat, natItems.map(i => i.temperatura), 'Temp. Cámara Natural (°C)', '#003DA5', 'rgba(0,61,165,0.1)');
             charts.tempAce = crearOActualizarGrafica(charts.tempAce, 'graficoTempAcelerada', labelsAce, aceItems.map(i => i.temperatura), 'Temp. Cámara Acelerada (°C)', '#C8102E', 'rgba(200,16,46,0.1)');
-            charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#666666', 'rgba(102,102,102,0.1)');
-            charts.humAce = crearOActualizarGrafica(charts.humAce, 'graficoHumAcelerada', labelsAce, aceItems.map(i => i.humedad), 'Hum. Cámara Acelerada (%)', '#28a745', 'rgba(40,167,69,0.1)');
+            charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#003DA5', 'rgba(0,61,165,0.1)');
+            charts.humAce = crearOActualizarGrafica(charts.humAce, 'graficoHumAcelerada', labelsAce, aceItems.map(i => i.humedad), 'Hum. Cámara Acelerada (%)', '#C8102E', 'rgba(200,16,46,0.1)');
         }
 
         function crearOActualizarGrafica(chartInstance, elementId, labels, data, labelName, borderColor, bgColor) {
@@ -872,7 +879,7 @@
             doc.text("Usuario: " + usuarioActual, 14, finalY);
             doc.text("Fecha y Hora: " + fechaHoraActual, 120, finalY);
 
-            // 4. Tabla de Datos Principal (Azul Institucional Leti #003DA5)
+            // 4. Tabla de Datos Principal (Estilo Azul Corporativo)
             doc.autoTable({
                 html: '#' + tableId,
                 startY: finalY + 4,
@@ -888,7 +895,7 @@
                     halign: 'center'
                 },
                 alternateRowStyles: {
-                    fillColor: [237, 237, 237] // Fondo gris claro corporativo
+                    fillColor: [237, 237, 237]
                 },
                 styles: { fontSize: 9, cellPadding: 4 },
                 didParseCell: function(data) {
