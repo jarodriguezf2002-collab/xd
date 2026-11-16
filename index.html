@@ -394,7 +394,14 @@
                 <div id="ultimaActualizacion" style="color: var(--text-main);">Última actualización: --</div>
                 
                 <div class="filter-group">
-                    <label for="tipoFiltro">Filtrar por:</label>
+                    <label for="filtroCamara">Cámara:</label>
+                    <select id="filtroCamara" onchange="aplicarFiltrosYActualizar()">
+                        <option value="todas">Todas las Cámaras</option>
+                        <option value="Cámara Natural">Cámara Natural</option>
+                        <option value="Cámara Acelerada">Cámara Acelerada</option>
+                    </select>
+
+                    <label for="tipoFiltro">Período:</label>
                     <select id="tipoFiltro" onchange="cambiarTipoFiltro()">
                         <option value="todos">Todo el Historial</option>
                         <option value="dia">Día Específico</option>
@@ -413,8 +420,8 @@
             </div>
 
             <!-- Tarjetas de Cámaras -->
-            <div class="cards-grid">
-                <div class="card">
+            <div class="cards-grid" id="cardsGridContainer">
+                <div class="card" id="cardNatural">
                     <h2>Cámara Natural</h2>
                     <div class="metric-group">
                         <div class="metric"><div class="label">Temperatura</div><div class="value" id="tempNatural">-- °C</div></div>
@@ -434,7 +441,7 @@
                     <div id="statusNatural" class="status-badge status-normal">NORMAL</div>
                 </div>
 
-                <div class="card">
+                <div class="card" id="cardAcelerada">
                     <h2>Cámara Acelerada</h2>
                     <div class="metric-group">
                         <div class="metric"><div class="label">Temperatura</div><div class="value" id="tempAcelerada">-- °C</div></div>
@@ -456,23 +463,23 @@
             </div>
 
             <!-- Gráficas Separadas -->
-            <div class="charts-grid">
-                <div class="chart-card">
+            <div class="charts-grid" id="gridChartsTemp">
+                <div class="chart-card" id="wrapTempNat">
                     <h4>Temperatura - Cámara Natural</h4>
                     <div class="chart-container"><canvas id="graficoTempNatural"></canvas></div>
                 </div>
-                <div class="chart-card">
+                <div class="chart-card" id="wrapTempAce">
                     <h4>Temperatura - Cámara Acelerada</h4>
                     <div class="chart-container"><canvas id="graficoTempAcelerada"></canvas></div>
                 </div>
             </div>
 
-            <div class="charts-grid">
-                <div class="chart-card">
+            <div class="charts-grid" id="gridChartsHum">
+                <div class="chart-card" id="wrapHumNat">
                     <h4>Humedad - Cámara Natural</h4>
                     <div class="chart-container"><canvas id="graficoHumNatural"></canvas></div>
                 </div>
-                <div class="chart-card">
+                <div class="chart-card" id="wrapHumAce">
                     <h4>Humedad - Cámara Acelerada</h4>
                     <div class="chart-container"><canvas id="graficoHumAcelerada"></canvas></div>
                 </div>
@@ -481,8 +488,6 @@
             <!-- Historial de Eventos -->
             <div class="section-box">
                 <h3>Historial de Todos los Eventos (Filtrado)</h3>
-                
-                <!-- Botones al principio del bloque -->
                 <div class="export-buttons">
                     <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialEventos', 'Historial_Eventos_Filtrado.xlsx')">📊 Exportar Historial a Excel</button>
                     <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialEventos', 'Historial de Eventos', 'Historial_Eventos_Filtrado.pdf')">📄 Exportar Historial a PDF</button>
@@ -507,8 +512,6 @@
             <!-- Historial de Alarmas -->
             <div class="section-box">
                 <h3>Historial Exclusivo de Alarmas (Filtrado)</h3>
-                
-                <!-- Botones al principio del bloque -->
                 <div class="export-buttons">
                     <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialAlarmas', 'Historial_Alarmas_Filtrado.xlsx')">📊 Exportar Alarmas a Excel</button>
                     <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialAlarmas', 'Historial de Alarmas', 'Historial_Alarmas_Filtrado.pdf')">📄 Exportar Alarmas a PDF</button>
@@ -697,11 +700,21 @@
         }
 
         function aplicarFiltrosYActualizar() {
+            const camaraFiltro = document.getElementById("filtroCamara").value;
             const tipo = document.getElementById("tipoFiltro").value;
             const fechaInputVal = document.getElementById("inputFecha").value;
             const fechaSeleccionada = fechaInputVal ? new Date(fechaInputVal + "T00:00:00") : new Date();
 
+            // Mostrar/Ocultar tarjetas según cámara seleccionada
+            document.getElementById("cardNatural").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
+            document.getElementById("cardAcelerada").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Acelerada") ? "block" : "none";
+            document.getElementById("wrapTempNat").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
+            document.getElementById("wrapTempAce").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Acelerada") ? "block" : "none";
+            document.getElementById("wrapHumNat").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
+            document.getElementById("wrapHumAce").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Acelerada") ? "block" : "none";
+
             let historialFiltrado = datosGlobales.historial.filter(item => {
+                if (camaraFiltro !== "todas" && item.camara !== camaraFiltro) return false;
                 if (tipo === "todos") return true;
                 const fechaItem = parsearFecha(item.fecha);
 
@@ -721,6 +734,7 @@
             });
 
             let alarmasFiltradas = datosGlobales.alarmas.filter(item => {
+                if (camaraFiltro !== "todas" && item.camara !== camaraFiltro) return false;
                 if (tipo === "todos") return true;
                 const fechaItem = parsearFecha(item.fecha);
 
@@ -816,10 +830,10 @@
             const labelsNat = natItems.map(i => i.fecha);
             const labelsAce = aceItems.map(i => i.fecha);
 
-            // Cámara Natural en Azul (#003DA5) y Cámara Acelerada en Rojo (#C8102E)
-            charts.tempNat = crearOActualizarGrafica(charts.tempNat, 'graficoTempNatural', labelsNat, natItems.map(i => i.temperatura), 'Temp. Cámara Natural (°C)', '#003DA5', 'rgba(0,61,165,0.1)');
+            // Gráficas en rojo corporativo #C8102E
+            charts.tempNat = crearOActualizarGrafica(charts.tempNat, 'graficoTempNatural', labelsNat, natItems.map(i => i.temperatura), 'Temp. Cámara Natural (°C)', '#C8102E', 'rgba(200,16,46,0.1)');
             charts.tempAce = crearOActualizarGrafica(charts.tempAce, 'graficoTempAcelerada', labelsAce, aceItems.map(i => i.temperatura), 'Temp. Cámara Acelerada (°C)', '#C8102E', 'rgba(200,16,46,0.1)');
-            charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#003DA5', 'rgba(0,61,165,0.1)');
+            charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#C8102E', 'rgba(200,16,46,0.1)');
             charts.humAce = crearOActualizarGrafica(charts.humAce, 'graficoHumAcelerada', labelsAce, aceItems.map(i => i.humedad), 'Hum. Cámara Acelerada (%)', '#C8102E', 'rgba(200,16,46,0.1)');
         }
 
@@ -846,7 +860,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // 1. Encabezado de la empresa (Rojo corporativo Leti #C8102E)
+            // 1. Encabezado de la empresa
             doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
             doc.setTextColor(200, 16, 46); 
@@ -879,7 +893,7 @@
             doc.text("Usuario: " + usuarioActual, 14, finalY);
             doc.text("Fecha y Hora: " + fechaHoraActual, 120, finalY);
 
-            // 4. Tabla de Datos Principal (Estilo Azul Corporativo)
+            // 4. Tabla de Datos Principal
             doc.autoTable({
                 html: '#' + tableId,
                 startY: finalY + 4,
@@ -905,6 +919,37 @@
                     }
                 }
             });
+
+            // 5. Adjuntar Gráficas al PDF
+            let currentY = doc.lastAutoTable.finalY + 10;
+            const camaraFiltro = document.getElementById("filtroCamara").value;
+
+            // Función auxiliar para agregar gráfica si existe en pantalla
+            const agregarGraficaAPDF = (chartInstance, tituloGrafica) => {
+                if (chartInstance && chartInstance.canvas) {
+                    const imgData = chartInstance.toBase64Image();
+                    if (currentY > 230) {
+                        doc.addPage();
+                        currentY = 20;
+                    }
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.setTextColor(0, 61, 165);
+                    doc.text(tituloGrafica, 14, currentY);
+                    currentY += 4;
+                    doc.addImage(imgData, 'PNG', 14, currentY, 180, 80);
+                    currentY += 88;
+                }
+            };
+
+            if (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") {
+                agregarGraficaAPDF(charts.tempNat, "Gráfica: Temperatura - Cámara Natural");
+                agregarGraficaAPDF(charts.humNat, "Gráfica: Humedad - Cámara Natural");
+            }
+            if (camaraFiltro === "todas" || camaraFiltro === "Cámara Acelerada") {
+                agregarGraficaAPDF(charts.tempAce, "Gráfica: Temperatura - Cámara Acelerada");
+                agregarGraficaAPDF(charts.humAce, "Gráfica: Humedad - Cámara Acelerada");
+            }
 
             doc.save(filename);
         }
