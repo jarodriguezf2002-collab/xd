@@ -490,7 +490,7 @@
                 <h3 id="tituloSeccionTabla">Historial de Todos los Eventos (Filtrado)</h3>
                 
                 <div class="export-buttons">
-                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialEventos', 'Reporte_Monitoreo.xlsx')">📊 Exportar a Excel</button>
+                    <button class="btn btn-excel" onclick="exportarExcel('Reporte_Monitoreo.xlsx')">📊 Exportar a Excel</button>
                     <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialEventos', 'Reporte de Monitoreo', 'Reporte_Monitoreo.pdf')">📄 Exportar a PDF</button>
                 </div>
 
@@ -865,15 +865,15 @@
             });
         }
 
-        function exportarExcel(tableId, filename) {
+        function exportarExcel(filename) {
             const tablaTemp = document.createElement("table");
             tablaTemp.innerHTML = `
                 <thead>
                     <tr>
                         <th>Fecha y Hora</th>
                         <th>Cámara</th>
-                        <th>Temperatura</th>
-                        <th>Humedad</th>
+                        <th>Temperatura (en °C)</th>
+                        <th>Humedad (en %)</th>
                         <th>Estado</th>
                     </tr>
                 </thead>
@@ -940,7 +940,7 @@
 
             doc.autoTable({
                 startY: finalY + 4,
-                head: [['Fecha y Hora', 'Cámara', 'Temperatura', 'Humedad', 'Estado']],
+                head: [['Fecha y Hora', 'Cámara', 'Temperatura (en °C)', 'Humedad (en %)', 'Estado']],
                 body: cuerpoTablaPDF,
                 theme: 'grid',
                 headStyles: { 
