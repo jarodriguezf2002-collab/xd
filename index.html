@@ -404,20 +404,30 @@
                     <label for="tipoFiltro">Período:</label>
                     <select id="tipoFiltro" onchange="cambiarTipoFiltro()">
                         <option value="todos">Todo el Historial</option>
+                        <option value="rango">Rango Personalizado</option>
                         <option value="dia">Día Específico</option>
                         <option value="semana">Semana Específica</option>
                         <option value="mes">Mes Específico</option>
                     </select>
+
+                    <!-- Selector de Rango Personalizado -->
+                    <div id="selectorRangoContenedor" style="display:none; align-items: center; gap: 5px;">
+                        <label>Desde:</label>
+                        <input type="date" id="inputFechaInicio" onchange="aplicarFiltrosYActualizar()">
+                        <label>Hasta:</label>
+                        <input type="date" id="inputFechaFin" onchange="aplicarFiltrosYActualizar()">
+                    </div>
+
+                    <!-- Selector de Fecha Única (Día, Semana, Mes) -->
+                    <div id="selectorFechaContenedor" style="display:none;">
+                        <input type="date" id="inputFecha" onchange="aplicarFiltrosYActualizar()">
+                    </div>
 
                     <label for="filtroVistaTabla">Vista:</label>
                     <select id="filtroVistaTabla" onchange="aplicarFiltrosYActualizar()">
                         <option value="todos">Todos los Eventos</option>
                         <option value="alarmas">Solo Alarmas</option>
                     </select>
-
-                    <div id="selectorFechaContenedor" style="display:none;">
-                        <input type="date" id="inputFecha" onchange="aplicarFiltrosYActualizar()">
-                    </div>
                 </div>
 
                 <button id="btnActualizar" class="btn" onclick="actualizarDatos()">
@@ -529,7 +539,6 @@
         let datosGlobales = { historial: [], alarmas: [] };
         let charts = { tempNat: null, tempAce: null, humNat: null, humAce: null };
 
-        // Variables para la paginación
         let paginaActual = 1;
         let registrosPorPagina = 10;
         let historialFiltradoGlobal = [];
@@ -594,6 +603,8 @@
                         
                         const hoy = new Date().toISOString().split('T')[0];
                         document.getElementById("inputFecha").value = hoy;
+                        document.getElementById("inputFechaInicio").value = hoy;
+                        document.getElementById("inputFechaFin").value = hoy;
 
                         actualizarDatos();
                     } else {
@@ -626,12 +637,16 @@
 
         function cambiarTipoFiltro() {
             const tipo = document.getElementById("tipoFiltro").value;
-            const contenedor = document.getElementById("selectorFechaContenedor");
+            const contenedorRango = document.getElementById("selectorRangoContenedor");
+            const contenedorFecha = document.getElementById("selectorFechaContenedor");
             
-            if (tipo === "todos") {
-                contenedor.style.display = "none";
-            } else {
-                contenedor.style.display = "inline-block";
+            contenedorRango.style.display = "none";
+            contenedorFecha.style.display = "none";
+
+            if (tipo === "rango") {
+                contenedorRango.style.display = "inline-flex";
+            } else if (tipo !== "todos") {
+                contenedorFecha.style.display = "inline-block";
             }
             aplicarFiltrosYActualizar();
         }
@@ -695,10 +710,15 @@
             const camaraFiltro = document.getElementById("filtroCamara").value;
             const tipo = document.getElementById("tipoFiltro").value;
             const vistaTabla = document.getElementById("filtroVistaTabla").value;
+            
+            const fechaInicioVal = document.getElementById("inputFechaInicio").value;
+            const fechaFinVal = document.getElementById("inputFechaFin").value;
             const fechaInputVal = document.getElementById("inputFecha").value;
+
+            const fechaInicio = fechaInicioVal ? new Date(fechaInicioVal + "T00:00:00") : null;
+            const fechaFin = fechaFinVal ? new Date(fechaFinVal + "T23:59:59") : null;
             const fechaSeleccionada = fechaInputVal ? new Date(fechaInputVal + "T00:00:00") : new Date();
 
-            // Actualizar título de la sección de tabla
             const tituloSeccion = document.getElementById("tituloSeccionTabla");
             if (vistaTabla === "alarmas") {
                 tituloSeccion.innerText = "Historial Exclusivo de Alarmas (Filtrado)";
@@ -706,7 +726,6 @@
                 tituloSeccion.innerText = "Historial de Todos los Eventos (Filtrado)";
             }
 
-            // Mostrar/Ocultar tarjetas y gráficas según cámara seleccionada
             document.getElementById("cardNatural").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
             document.getElementById("cardAcelerada").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Acelerada") ? "block" : "none";
             document.getElementById("wrapTempNat").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
@@ -721,7 +740,11 @@
 
                 const fechaItem = parsearFecha(item.fecha);
 
-                if (tipo === "dia") {
+                if (tipo === "rango") {
+                    if (fechaInicio && fechaItem < fechaInicio) return false;
+                    if (fechaFin && fechaItem > fechaFin) return false;
+                    return true;
+                } else if (tipo === "dia") {
                     return fechaItem.toDateString() === fechaSeleccionada.toDateString();
                 } else if (tipo === "semana") {
                     const inicioSemana = new Date(fechaSeleccionada);
@@ -738,20 +761,26 @@
 
             procesarTablasYMinMax(historialFiltrado);
 
-            // Filtrar para gráficas (respetando cámara y período)
             let historialParaGraficas = datosGlobales.historial.filter(item => {
                 if (camaraFiltro !== "todas" && item.camara !== camaraFiltro) return false;
                 if (tipo === "todos") return true;
                 const fechaItem = parsearFecha(item.fecha);
-                if (tipo === "dia") return fechaItem.toDateString() === fechaSeleccionada.toDateString();
-                if (tipo === "semana") {
+
+                if (tipo === "rango") {
+                    if (fechaInicio && fechaItem < fechaInicio) return false;
+                    if (fechaFin && fechaItem > fechaFin) return false;
+                    return true;
+                } else if (tipo === "dia") {
+                    return fechaItem.toDateString() === fechaSeleccionada.toDateString();
+                } else if (tipo === "semana") {
                     const inicioSemana = new Date(fechaSeleccionada);
                     inicioSemana.setDate(fechaSeleccionada.getDate() - fechaSeleccionada.getDay());
                     const finSemana = new Date(inicioSemana);
                     finSemana.setDate(inicioSemana.getDate() + 6);
                     return fechaItem >= inicioSemana && fechaItem <= finSemana;
+                } else if (tipo === "mes") {
+                    return fechaItem.getMonth() === fechaSeleccionada.getMonth() && fechaItem.getFullYear() === fechaSeleccionada.getFullYear();
                 }
-                if (tipo === "mes") return fechaItem.getMonth() === fechaSeleccionada.getMonth() && fechaItem.getFullYear() === fechaSeleccionada.getFullYear();
                 return true;
             });
             actualizarGraficasSeparadas(historialParaGraficas);
@@ -899,8 +928,31 @@
         }
 
         function exportarExcel(tableId, filename) {
-            const tabla = document.getElementById(tableId);
-            const wb = XLSX.utils.table_to_book(tabla, {sheet: "Reporte Filtrado"});
+            // Nota: Para exportar todo el rango filtrado completo a Excel sin paginación, creamos una tabla temporal con todos los datos filtrados
+            const tablaTemp = document.createElement("table");
+            tablaTemp.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Cámara</th>
+                        <th>Temperatura</th>
+                        <th>Humedad</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${historialFiltradoGlobal.map(item => `
+                        <tr>
+                            <td>${item.fecha}</td>
+                            <td>${item.camara}</td>
+                            <td>${item.temperatura}</td>
+                            <td>${item.humedad}</td>
+                            <td>${item.estado}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            const wb = XLSX.utils.table_to_book(tablaTemp, {sheet: "Reporte Filtrado"});
             XLSX.writeFile(wb, filename);
         }
 
@@ -941,9 +993,19 @@
             doc.text("Usuario: " + usuarioActual, 14, finalY);
             doc.text("Fecha y Hora: " + fechaHoraActual, 120, finalY);
 
+            // Construir la tabla completa con todos los datos filtrados (sin importar la paginación de la pantalla)
+            const cuerpoTablaPDF = historialFiltradoGlobal.map(item => [
+                item.fecha,
+                item.camara,
+                item.temperatura + " °C",
+                item.humedad + " %",
+                item.estado
+            ]);
+
             doc.autoTable({
-                html: '#' + tableId,
                 startY: finalY + 4,
+                head: [['Fecha y Hora', 'Cámara', 'Temperatura', 'Humedad', 'Estado']],
+                body: cuerpoTablaPDF,
                 theme: 'grid',
                 headStyles: { 
                     fillColor: [0, 61, 165], 
