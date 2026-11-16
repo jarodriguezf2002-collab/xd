@@ -409,6 +409,12 @@
                         <option value="mes">Mes Específico</option>
                     </select>
 
+                    <label for="filtroVistaTabla">Vista:</label>
+                    <select id="filtroVistaTabla" onchange="aplicarFiltrosYActualizar()">
+                        <option value="todos">Todos los Eventos</option>
+                        <option value="alarmas">Solo Alarmas</option>
+                    </select>
+
                     <div id="selectorFechaContenedor" style="display:none;">
                         <input type="date" id="inputFecha" onchange="aplicarFiltrosYActualizar()">
                     </div>
@@ -485,12 +491,13 @@
                 </div>
             </div>
 
-            <!-- Historial de Eventos -->
+            <!-- Tabla Unificada con Paginación -->
             <div class="section-box">
-                <h3>Historial de Todos los Eventos (Filtrado)</h3>
+                <h3 id="tituloSeccionTabla">Historial de Todos los Eventos (Filtrado)</h3>
+                
                 <div class="export-buttons">
-                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialEventos', 'Historial_Eventos_Filtrado.xlsx')">📊 Exportar Historial a Excel</button>
-                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialEventos', 'Historial de Eventos', 'Historial_Eventos_Filtrado.pdf')">📄 Exportar Historial a PDF</button>
+                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialEventos', 'Reporte_Monitoreo.xlsx')">📊 Exportar a Excel</button>
+                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialEventos', 'Reporte de Monitoreo', 'Reporte_Monitoreo.pdf')">📄 Exportar a PDF</button>
                 </div>
 
                 <div style="overflow-x: auto;">
@@ -507,29 +514,9 @@
                         <tbody id="cuerpoTablaHistorial"></tbody>
                     </table>
                 </div>
-            </div>
 
-            <!-- Historial de Alarmas -->
-            <div class="section-box">
-                <h3>Historial Exclusivo de Alarmas (Filtrado)</h3>
-                <div class="export-buttons">
-                    <button class="btn btn-excel" onclick="exportarExcel('tablaHistorialAlarmas', 'Historial_Alarmas_Filtrado.xlsx')">📊 Exportar Alarmas a Excel</button>
-                    <button class="btn btn-pdf" onclick="exportarPDF('tablaHistorialAlarmas', 'Historial de Alarmas', 'Historial_Alarmas_Filtrado.pdf')">📄 Exportar Alarmas a PDF</button>
-                </div>
-
-                <div style="overflow-x: auto;">
-                    <table id="tablaHistorialAlarmas">
-                        <thead>
-                            <tr>
-                                <th>Fecha y Hora</th>
-                                <th>Cámara</th>
-                                <th>Temperatura</th>
-                                <th>Humedad</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cuerpoTablaAlarmas"></tbody>
-                    </table>
+                <!-- Controles de Paginación -->
+                <div id="paginacionEventos" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 5px 0;">
                 </div>
             </div>
 
@@ -541,6 +528,11 @@
 
         let datosGlobales = { historial: [], alarmas: [] };
         let charts = { tempNat: null, tempAce: null, humNat: null, humAce: null };
+
+        // Variables para la paginación
+        let paginaActual = 1;
+        let registrosPorPagina = 10;
+        let historialFiltradoGlobal = [];
 
         function mostrarRegistro(ver) {
             document.getElementById("formLogin").style.display = ver ? "none" : "block";
@@ -702,10 +694,19 @@
         function aplicarFiltrosYActualizar() {
             const camaraFiltro = document.getElementById("filtroCamara").value;
             const tipo = document.getElementById("tipoFiltro").value;
+            const vistaTabla = document.getElementById("filtroVistaTabla").value;
             const fechaInputVal = document.getElementById("inputFecha").value;
             const fechaSeleccionada = fechaInputVal ? new Date(fechaInputVal + "T00:00:00") : new Date();
 
-            // Mostrar/Ocultar tarjetas según cámara seleccionada
+            // Actualizar título de la sección de tabla
+            const tituloSeccion = document.getElementById("tituloSeccionTabla");
+            if (vistaTabla === "alarmas") {
+                tituloSeccion.innerText = "Historial Exclusivo de Alarmas (Filtrado)";
+            } else {
+                tituloSeccion.innerText = "Historial de Todos los Eventos (Filtrado)";
+            }
+
+            // Mostrar/Ocultar tarjetas y gráficas según cámara seleccionada
             document.getElementById("cardNatural").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
             document.getElementById("cardAcelerada").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Acelerada") ? "block" : "none";
             document.getElementById("wrapTempNat").style.display = (camaraFiltro === "todas" || camaraFiltro === "Cámara Natural") ? "block" : "none";
@@ -715,7 +716,9 @@
 
             let historialFiltrado = datosGlobales.historial.filter(item => {
                 if (camaraFiltro !== "todas" && item.camara !== camaraFiltro) return false;
+                if (vistaTabla === "alarmas" && item.estado !== "Alerta") return false;
                 if (tipo === "todos") return true;
+
                 const fechaItem = parsearFecha(item.fecha);
 
                 if (tipo === "dia") {
@@ -733,48 +736,37 @@
                 return true;
             });
 
-            let alarmasFiltradas = datosGlobales.alarmas.filter(item => {
+            procesarTablasYMinMax(historialFiltrado);
+
+            // Filtrar para gráficas (respetando cámara y período)
+            let historialParaGraficas = datosGlobales.historial.filter(item => {
                 if (camaraFiltro !== "todas" && item.camara !== camaraFiltro) return false;
                 if (tipo === "todos") return true;
                 const fechaItem = parsearFecha(item.fecha);
-
-                if (tipo === "dia") {
-                    return fechaItem.toDateString() === fechaSeleccionada.toDateString();
-                } else if (tipo === "semana") {
+                if (tipo === "dia") return fechaItem.toDateString() === fechaSeleccionada.toDateString();
+                if (tipo === "semana") {
                     const inicioSemana = new Date(fechaSeleccionada);
                     inicioSemana.setDate(fechaSeleccionada.getDate() - fechaSeleccionada.getDay());
                     const finSemana = new Date(inicioSemana);
                     finSemana.setDate(inicioSemana.getDate() + 6);
                     return fechaItem >= inicioSemana && fechaItem <= finSemana;
-                } else if (tipo === "mes") {
-                    return fechaItem.getMonth() === fechaSeleccionada.getMonth() && 
-                           fechaItem.getFullYear() === fechaSeleccionada.getFullYear();
                 }
+                if (tipo === "mes") return fechaItem.getMonth() === fechaSeleccionada.getMonth() && fechaItem.getFullYear() === fechaSeleccionada.getFullYear();
                 return true;
             });
-
-            procesarTablasYMinMax(historialFiltrado, alarmasFiltradas);
-            actualizarGraficasSeparadas(historialFiltrado);
+            actualizarGraficasSeparadas(historialParaGraficas);
         }
 
-        function procesarTablasYMinMax(historial, alarmas) {
-            const tbodyEventos = document.getElementById("cuerpoTablaHistorial");
-            tbodyEventos.innerHTML = "";
+        function procesarTablasYMinMax(historial) {
+            historialFiltradoGlobal = historial;
+            paginaActual = 1;
+
+            renderizarTablaPaginada();
 
             let tNatMin = Infinity, tNatMax = -Infinity, hNatMin = Infinity, hNatMax = -Infinity;
             let tAceMin = Infinity, tAceMax = -Infinity, hAceMin = Infinity, hAceMax = -Infinity;
 
             historial.forEach(item => {
-                const fila = document.createElement("tr");
-                fila.innerHTML = `
-                    <td>${item.fecha}</td>
-                    <td><b>${item.camara}</b></td>
-                    <td>${item.temperatura} °C</td>
-                    <td>${item.humedad} %</td>
-                    <td><span style="color: ${item.estado === 'Alerta' ? '#C8102E' : '#28a745'}; font-weight: bold;">${item.estado}</span></td>
-                `;
-                tbodyEventos.appendChild(fila);
-
                 const temp = parseFloat(item.temperatura);
                 const hum = parseFloat(item.humedad);
 
@@ -802,25 +794,82 @@
             document.getElementById("maxTempAcelerada").innerText = tAceMax !== -Infinity ? tAceMax : "--";
             document.getElementById("minHumAcelerada").innerText = hAceMin !== Infinity ? hAceMin : "--";
             document.getElementById("maxHumAcelerada").innerText = hAceMax !== -Infinity ? hAceMax : "--";
+        }
 
-            const tbodyAlarmas = document.getElementById("cuerpoTablaAlarmas");
-            tbodyAlarmas.innerHTML = "";
-            
-            if (alarmas && alarmas.length > 0) {
-                alarmas.forEach(item => {
+        function renderizarTablaPaginada() {
+            const tbodyEventos = document.getElementById("cuerpoTablaHistorial");
+            tbodyEventos.innerHTML = "";
+
+            const totalRegistros = historialFiltradoGlobal.length;
+            const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina) || 1;
+
+            if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+            if (paginaActual < 1) paginaActual = 1;
+
+            const inicio = (paginaActual - 1) * registrosPorPagina;
+            const fin = inicio + registrosPorPagina;
+            const registrosPagina = historialFiltradoGlobal.slice(inicio, fin);
+
+            if (registrosPagina.length > 0) {
+                registrosPagina.forEach(item => {
                     const fila = document.createElement("tr");
                     fila.innerHTML = `
                         <td>${item.fecha}</td>
                         <td><b>${item.camara}</b></td>
                         <td>${item.temperatura} °C</td>
                         <td>${item.humedad} %</td>
-                        <td><span style="color: #C8102E; font-weight: bold;">${item.estado}</span></td>
+                        <td><span style="color: ${item.estado === 'Alerta' ? '#C8102E' : '#28a745'}; font-weight: bold;">${item.estado}</span></td>
                     `;
-                    tbodyAlarmas.appendChild(fila);
+                    tbodyEventos.appendChild(fila);
                 });
             } else {
-                tbodyAlarmas.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--secondary);">No hay alarmas registradas en este período.</td></tr>`;
+                tbodyEventos.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--secondary);">No hay registros en este período con el filtro seleccionado.</td></tr>`;
             }
+
+            renderizarControlesPaginacion(totalPaginas);
+        }
+
+        function renderizarControlesPaginacion(totalPaginas) {
+            const contenedorPaginacion = document.getElementById("paginacionEventos");
+            
+            let htmlBotones = `<div style="font-size: 13px; color: var(--secondary);">Mostrando página ${paginaActual} de ${totalPaginas} (Total: ${historialFiltradoGlobal.length} registros)</div>`;
+            
+            htmlBotones += `<div style="display: flex; gap: 5px; align-items: center;">`;
+            
+            htmlBotones += `<button class="btn" style="padding: 5px 10px; font-size: 12px; background: ${paginaActual === 1 ? '#ccc' : 'var(--primary)'};" onclick="cambiarPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>&lt;</button>`;
+
+            for (let i = 1; i <= totalPaginas; i++) {
+                if (i === 1 || i === totalPaginas || (i >= paginaActual - 1 && i <= paginaActual + 1)) {
+                    htmlBotones += `<button class="btn" style="padding: 5px 10px; font-size: 12px; background: ${i === paginaActual ? 'var(--primary)' : 'var(--card-bg)'}; color: ${i === paginaActual ? '#fff' : 'var(--text-main)'}; border: 1px solid var(--border-color);" onclick="cambiarPagina(${i})">${i}</button>`;
+                } else if (i === paginaActual - 2 || i === paginaActual + 2) {
+                    htmlBotones += `<span style="padding: 0 5px; color: var(--secondary);">...</span>`;
+                }
+            }
+
+            htmlBotones += `<button class="btn" style="padding: 5px 10px; font-size: 12px; background: ${paginaActual === totalPaginas || totalPaginas === 0 ? '#ccc' : 'var(--primary)'};" onclick="cambiarPagina(${paginaActual + 1})" ${paginaActual === totalPaginas || totalPaginas === 0 ? 'disabled' : ''}>&gt;</button>`;
+            
+            htmlBotones += `
+                <select id="selectRegistrosPorPagina" onchange="cambiarRegistrosPorPagina(this.value)" style="margin-left: 15px; padding: 5px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-size: 12px;">
+                    <option value="10" ${registrosPorPagina === 10 ? 'selected' : ''}>10 / página</option>
+                    <option value="25" ${registrosPorPagina === 25 ? 'selected' : ''}>25 / página</option>
+                    <option value="50" ${registrosPorPagina === 50 ? 'selected' : ''}>50 / página</option>
+                    <option value="100" ${registrosPorPagina === 100 ? 'selected' : ''}>100 / página</option>
+                </select>
+            `;
+
+            htmlBotones += `</div>`;
+            contenedorPaginacion.innerHTML = htmlBotones;
+        }
+
+        function cambiarPagina(nuevaPagina) {
+            paginaActual = nuevaPagina;
+            renderizarTablaPaginada();
+        }
+
+        function cambiarRegistrosPorPagina(valor) {
+            registrosPorPagina = parseInt(valor);
+            paginaActual = 1;
+            renderizarTablaPaginada();
         }
 
         function actualizarGraficasSeparadas(historial) {
@@ -830,7 +879,6 @@
             const labelsNat = natItems.map(i => i.fecha);
             const labelsAce = aceItems.map(i => i.fecha);
 
-            // Gráficas en rojo corporativo #C8102E
             charts.tempNat = crearOActualizarGrafica(charts.tempNat, 'graficoTempNatural', labelsNat, natItems.map(i => i.temperatura), 'Temp. Cámara Natural (°C)', '#C8102E', 'rgba(200,16,46,0.1)');
             charts.tempAce = crearOActualizarGrafica(charts.tempAce, 'graficoTempAcelerada', labelsAce, aceItems.map(i => i.temperatura), 'Temp. Cámara Acelerada (°C)', '#C8102E', 'rgba(200,16,46,0.1)');
             charts.humNat = crearOActualizarGrafica(charts.humNat, 'graficoHumNatural', labelsNat, natItems.map(i => i.humedad), 'Hum. Cámara Natural (%)', '#C8102E', 'rgba(200,16,46,0.1)');
@@ -860,18 +908,19 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // 1. Encabezado de la empresa
             doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
             doc.setTextColor(200, 16, 46); 
             doc.text("Laboratorios Leti, S.A.V.", 14, 20);
             
-            // 2. Bloque de Títulos del Informe Técnico
+            const vistaTabla = document.getElementById("filtroVistaTabla").value;
+            const subtitulo = vistaTabla === "alarmas" ? "INFORME DE ALARMAS (FILTRADO)" : "INFORME DE EVENTOS (FILTRADO)";
+
             doc.autoTable({
                 startY: 26,
                 head: [
                     [{ content: 'INFORME TÉCNICO', styles: { halign: 'center', fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 11 } }],
-                    [{ content: title.toUpperCase() + ' (FILTRADO)', styles: { halign: 'center', fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 10 } }]
+                    [{ content: subtitulo, styles: { halign: 'center', fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 10 } }]
                 ],
                 body: [],
                 theme: 'grid',
@@ -880,7 +929,6 @@
                 tableLineWidth: 0.3
             });
 
-            // 3. Metadatos (Usuario y Fecha/Hora actual)
             const usuarioInput = document.getElementById("usuarioInput");
             const usuarioActual = usuarioInput && usuarioInput.value ? usuarioInput.value : "admin";
             const fechaHoraActual = new Date().toLocaleString();
@@ -893,7 +941,6 @@
             doc.text("Usuario: " + usuarioActual, 14, finalY);
             doc.text("Fecha y Hora: " + fechaHoraActual, 120, finalY);
 
-            // 4. Tabla de Datos Principal
             doc.autoTable({
                 html: '#' + tableId,
                 startY: finalY + 4,
@@ -920,11 +967,9 @@
                 }
             });
 
-            // 5. Adjuntar Gráficas al PDF
             let currentY = doc.lastAutoTable.finalY + 10;
             const camaraFiltro = document.getElementById("filtroCamara").value;
 
-            // Función auxiliar para agregar gráfica si existe en pantalla
             const agregarGraficaAPDF = (chartInstance, tituloGrafica) => {
                 if (chartInstance && chartInstance.canvas) {
                     const imgData = chartInstance.toBase64Image();
